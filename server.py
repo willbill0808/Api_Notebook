@@ -24,4 +24,10 @@ CREATE TABLE IF NOT EXISTS notes (
 );
 """)
 
+server.execute("""INSERT INTO users (username, password) VALUES(?, ?)""", ("test", "pass"))
+
+server.execute("""INSERT INTO notes (user_id, notename, contents) VALUES(?, ?, ?)""", ("1", "note1", "hei, content"))
+server.execute("""INSERT INTO notes (user_id, notename, contents) VALUES(?, ?, ?)""", ("1", "note2", "hei2, content2"))
+server.execute("""INSERT INTO notes (user_id, notename, contents) VALUES(?, ?, ?)""", ("1", "note3", "hei3, content3"))
+
 server.commit()
