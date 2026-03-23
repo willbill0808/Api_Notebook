@@ -11,14 +11,17 @@ user_id = 1
 
 def tabLoader():
 
-    tabs = [sg.Tab("menu", [[sg.Button("Make new tab", key=("-Make_tab-"))]])]
+    tabs = [sg.Tab("menu", [[sg.Text('What do you want you new note space to be called:')], [sg.Input(key='-INPUT-'), sg.Button("Make new tab", key=("-Make_tab-"))]])]
 
     c.execute("SELECT * FROM notes")   
     rows = c.fetchall() 
     for row in rows:
         print(row)
-        tabs.append(sg.Tab(row[2], [[sg.Multiline(key=f'-ML-', default_text=row[3], write_only=True, size=(60,10))]]))
+        tabs.append(sg.Tab(row[2], [[sg.Multiline(key=f'-ML-', default_text=row[3], write_only=True, size=(120,20))]]))
     return tabs
+
+def makeTab(Tittle):
+    print(Tittle)
 
 layout = [
     [sg.Text("Tittle")],
@@ -26,13 +29,19 @@ layout = [
     [sg.Button("Quit", key="-Exit-")]
     ]
 
-window = sg.Window('Multiline Example', layout, finalize=True)
+window = sg.Window(
+    'Notes App',
+    layout,
+    size=(900, 500),
+    resizable=True,
+    finalize=True
+)
 
 while True:
     event, values = window.read()
     if event == sg.WIN_CLOSED or event == '-Exit-':
         break
     if event =="-Make_tab-":
-        print("new")
+        makeTab(values['-INPUT-'])
 
 window.close()
