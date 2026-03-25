@@ -61,7 +61,7 @@ def tabLoader():
         if note_type == "todo":
             tabs.append(
                 sg.Tab(title,[
-                    [sg.Input(key='-INPUT-checkbox-'), sg.Button("Make a new checkbox", key="-Make_checkbox-")],
+                    [sg.Input(key=f'-INPUT-checkbox-{title}-'), sg.Button("Make a new checkbox", key=f"-Make_checkbox-{title}-")],
                     [sg.Button("Delete", key=f"-Delete-{note_id}-"), sg.Text(f"type: {note_type}")]
                 ])
             )
@@ -129,6 +129,17 @@ while True:
         ]
 
         window = sg.Window('Notes App', layout, size=(900,500), resizable=True, finalize=True)
+    
+    if event.startswith("-Make_checkbox-"):
+        todo_name = str(event.replace("-Make_checkbox-", "").replace("-", ""))
+        print(f"{todo_name=}")
+        print(f"{values[f"-INPUT-checkbox-{todo_name}-"]=}")
+
+        todo_box [todo_name, values[f"-INPUT-checkbox-{todo_name}-"], false]
+        r = requests.post(f"http://{ip}:{port}/add-todo", headers=headers, json=todo_box)
+        print(r.json())  # Print server response
+
+
 
     # Event triggered when user wants to update existing notes
     if event == "-Update-":
