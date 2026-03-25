@@ -27,7 +27,7 @@ pip install FreeSimpleGUI requests
 1. **Klone prosjektet**:
 
 ```bash
-git clone <din-repo-url>
+git clone https://github.com/willbill0808/Api_Notebook.git
 cd Api_Notebook
 ```
 
