@@ -26,12 +26,13 @@ CREATE TABLE IF NOT EXISTS users (
 # Create "notes" table if it doesn't exist
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS notes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,  -- Unique note ID
-    user_id INTEGER NOT NULL,              -- Foreign key to users table
-    notename VARCHAR(25) NOT NULL,         -- Note title
-    contents TEXT,                         -- Note contents
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Creation timestamp
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Last updated timestamp
+    id INTEGER PRIMARY KEY AUTOINCREMENT,                         -- Unique note ID
+    user_id INTEGER NOT NULL,                                     -- Foreign key to users table
+    notename VARCHAR(25) NOT NULL,                                -- Note title
+    contents TEXT,                                                -- Note contents,
+    type TEXT CHECK(type IN ('note', 'todo')) not null,           -- Either note or todo
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,               -- Creation timestamp
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,               -- Last updated timestamp
 
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE  -- Ensure notes are deleted if user is deleted
 );
@@ -122,8 +123,8 @@ class Handler(BaseHTTPRequestHandler):
 
                 # Insert new note for user_id=1 with empty content
                 cursor.execute(
-                    """INSERT INTO notes (user_id, notename, contents) VALUES(?, ?, ?)""",
-                    (1, title, "")
+                    """INSERT INTO notes (user_id, notename, contents, type) VALUES(?, ?, ?, ?)""",
+                    (1, title, "", "note")
                 )
 
                 conn.commit()
