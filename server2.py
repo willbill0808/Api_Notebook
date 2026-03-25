@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS notes (
 );
 """)
 
-server.execute("""INSERT INTO users (username, password) VALUES(?, ?)""", ("test", "pass"))
+cursor.execute("""INSERT INTO users (username, password) VALUES(?, ?)""", ("test", "pass"))
 
 conn.commit()
 
