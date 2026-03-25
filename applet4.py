@@ -3,45 +3,77 @@ import requests, json
 user = "test"
 user_id = 1
 
+ip = "10.0.0.88"
+port = 8000
+
 def tabLoader():
+    tabs = []
 
-    tabs = [sg.Tab("menu", [[sg.Text('What do you want you new note space to be called:')], [sg.Input(key='-INPUT-'), sg.Button("Make new tab", key=("-Make_tab-"))]])]
+    # Menu tab
+    tabs.append(
+        sg.Tab(
+            "menu",
+            [[sg.Text('What do you want your new note space to be called:')],
+             [sg.Input(key='-INPUT-'), sg.Button("Make new tab", key="-Make_tab-")]]
+        )
+    )
 
-    print("hi")
-
-    r = requests.get("http://193.69.217.172:8000/notes")  
-    print(r.json())
-
+    # Load notes from server
+    r = requests.get(f"http://{ip}:{port}/notes")  
     rows = r.json()["data"]
 
+    # Map title -> {"id":..., "key":...}
+    tab_data = {}
+
     for row in rows:
-        print(row)
-        tabs.append(sg.Tab(row[2], [[sg.Multiline(key=f'-ML-', default_text=row[3], write_only=True, size=(120,20))]]))
-    return tabs
+        note_id = row[0]
+        title = row[2]
+        content = row[3]
+        key = f"-ML-{note_id}"  # unique key for this tab's multiline
+
+        # Add tab to GUI
+        tabs.append(
+            sg.Tab(title, [[sg.Multiline(key=key, default_text=content, size=(120,20))]])
+        )
+
+        # Save mapping
+        tab_data[title] = {"id": note_id, "key": key}
+
+    return tabs, tab_data, rows
 
 def makeTab(Tittle):
     print(Tittle)
 
-layout = [
-    [sg.Text("Tittle")],
-    [sg.TabGroup([tabLoader()])],
-    [sg.Button("Quit", key="-Exit-")]
-    ]
+tabs, tab_data, original_content = tabLoader()
 
-window = sg.Window(
-    'Notes App',
-    layout,
-    size=(900, 500),
-    resizable=True,
-    finalize=True
-)
+layout = [
+    [sg.TabGroup([tabs])],
+    [sg.Button("Update", key="-Update-"), sg.Button("Quit", key="-Exit-")]
+]
+
+window = sg.Window('Notes App', layout, size=(900,500), resizable=True, finalize=True)
 
 while True:
     event, values = window.read()
-    if event == sg.WIN_CLOSED or event == '-Exit-':
+    if event in (sg.WIN_CLOSED, "-Exit-"):
         break
-    if event =="-Make_tab-":
-        makeTab(values['-INPUT-'])
+
+    if event == "-Update-":
+        notes_to_send = []
+
+        for title, info in tab_data.items():
+            note_id = info['id']
+            key = info['key']
+            content = values.get(key, "")
+
+            notes_to_send.append({
+                "id": note_id,
+                "title": title,
+                "content": content
+            })
+
+    r = requests.post(f"http://{ip}:{port}/update", json=notes_to_send)
+    print(r.json())
 
 window.close()
 
