@@ -145,6 +145,37 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(response).encode())
 
         # -------------------------------
+        # Create a new To-do list
+        # -------------------------------
+        if parsed.path == "/make-todo":
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length)
+
+            try:
+                # Expect a JSON string with the note title
+                title = json.loads(body)
+                print("New tab name received:", title)
+
+                # Insert new note for user_id=1 with empty content
+                cursor.execute(
+                    """INSERT INTO notes (user_id, notename, contents, type) VALUES(?, ?, ?, ?)""",
+                    (1, title, "", "todo")
+                )
+
+                conn.commit()
+                response = {"status": "ok"}
+
+            except Exception as e:
+                # Handle insertion errors (e.g., foreign key issues)
+                response = {"status": "error", "message": str(e)}
+
+            # Send JSON response
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode())
+
+        # -------------------------------
         # Update existing notes
         # -------------------------------
         if parsed.path == "/update":

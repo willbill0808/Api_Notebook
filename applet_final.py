@@ -27,7 +27,8 @@ def tabLoader():
         sg.Tab(
             "menu",
             [[sg.Text('What do you want your new note space to be called:')],
-             [sg.Input(key='-INPUT-'), sg.Button("Make new tab", key="-Make_tab-")]]
+             [sg.Input(key='-INPUT-note-'), sg.Button("Make a new tab", key="-Make_note-")],
+             [sg.Input(key='-INPUT-todo-'), sg.Button("Make a new to-do tab", key="-Make_todo-")]]
         )
     )
 
@@ -76,9 +77,10 @@ while True:
         break
     
     # Event triggered when user creates a new tab/note
-    if event == "-Make_tab-":
+    if event == "-Make_note-":
+        
         # Send the new note title to the server
-        r = requests.post(f"http://{ip}:{port}/make-note", headers=headers, json=values["-INPUT-"])
+        r = requests.post(f"http://{ip}:{port}/make-note", headers=headers, json=values["-INPUT-note-"])
         print(r.json())  # Print server response
 
         # Close current window to reload with new tab
@@ -95,6 +97,13 @@ while True:
 
         # Recreate the window with updated tabs
         window = sg.Window('Notes App', layout, size=(900,500), resizable=True, finalize=True)
+
+
+    if event == "-Make_todo-":
+        print(f"{values=}")
+
+        r = requests.post(f"http://{ip}:{port}/make-todo", headers=headers, json=values["-INPUT-todo-"])
+        print(r.json())  # Print server response
 
     # Event triggered when user wants to update existing notes
     if event == "-Update-":
