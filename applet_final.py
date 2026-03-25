@@ -43,10 +43,11 @@ def tabLoader():
         title = row[2]          # Note title
         content = row[3]        # Note content
         key = f"-ML-{note_id}"  # Unique key for the Multiline input field
+        note_type = row[4]
 
         # Add the tab with a multiline box containing the note content
         tabs.append(
-            sg.Tab(title, [[sg.Multiline(key=key, default_text=content, size=(120,20))], [sg.Button("Delete", key=f"-Delete-{note_id}-")]])
+            sg.Tab(title, [[sg.Multiline(key=key, default_text=content, size=(120,20))], [sg.Button("Delete", key=f"-Delete-{note_id}-"), sg.Text(f"type: {note_type}")]])
         )
 
         # Save mapping of title to note metadata for easy updates later
