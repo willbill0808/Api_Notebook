@@ -195,6 +195,8 @@ class Handler(BaseHTTPRequestHandler):
                 rows = c.fetchall() 
                 if rows:
                     print(rows)
+                else:
+                    print(f"{title} is empty")
 
                 # Insert new note for user_id=1 with empty content
                 #cursor.execute(
