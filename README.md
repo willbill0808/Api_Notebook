@@ -27,7 +27,7 @@ pip install FreeSimpleGUI requests
 1. **Klone prosjektet**:
 
 ```bash
-git clone <din-repo-url>
+git clone https://github.com/willbill0808/Api_Notebook.git
 cd Api_Notebook
 ```
 
@@ -48,13 +48,6 @@ python3 server2.py
 
 Serveren kjører nå på: `http://localhost:8000`
 
-```python
-server = HTTPServer(("0.0.0.0", 8000), Handler)
-```
-Denne linjen styrer hvor du vil at serveren skal høre etter requests
-Om du endrer "0.0.0.0" til "localhost" kommer den bare til å ta i mot forespørseler fra datamaskinen som kjører serveren
-Om du endrer 8000 til et annet tall så bytter du port den hører på(hver obs på at du må endre dette i applet koden også)
-
 4. **Start klienten**:
 
 ```bash
@@ -63,6 +56,14 @@ python3 client.py
 
 GUI vil hente eksisterende notater fra serveren og tillate oppretting og oppdatering av nye notater.
 
+5. **Endring i server ip eller port**:
+
+```python
+server = HTTPServer(("0.0.0.0", 8000), Handler)
+```
+Denne linjen styrer hvor du vil at serveren skal høre etter requests
+Om du endrer "0.0.0.0" til "localhost" kommer den bare til å ta i mot forespørseler fra datamaskinen som kjører serveren
+Om du endrer 8000 til et annet tall så bytter du port den hører på(hver obs på at du må endre dette i applet koden også)
 ```python
 # Server connection details
 ip = "193.69.217.172"
