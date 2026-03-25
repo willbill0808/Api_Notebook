@@ -175,9 +175,12 @@ class Handler(BaseHTTPRequestHandler):
                 note_id = json.loads(body)
                 print(note_id)
                 
-
-                conn.commit()  # Save all updates
-                response = {"status": "ok"}
+                 if note_id is not None:
+                    cursor.execute("DELETE FROM notes WHERE id = ?", (note_id,))
+                    conn.commit()
+                    response = {"status": "ok"}
+                else:
+                    response = {"status": "error", "message": "No note id provided"}
 
             except Exception as e:
                 response = {"status": "error", "message": str(e)}
