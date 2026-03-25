@@ -3,6 +3,10 @@ import sqlite3
 import json
 from urllib.parse import urlparse, parse_qs
 
+
+API_KEY = "mysecret123"
+
+
 # -------------------------------
 # Database setup
 # -------------------------------
@@ -56,7 +60,7 @@ class Handler(BaseHTTPRequestHandler):
     """
     Handles HTTP GET and POST requests for the notes app.
     """
-    API_KEY = "mysecret123"
+    
 
     def is_authorized(self):
         return self.headers.get("X-API-Key") == API_KEY
