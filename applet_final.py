@@ -8,6 +8,8 @@ user_id = 1
 # Server connection details
 ip = "193.69.217.172"
 port = 8000
+headers = {"X-API-Key": "mysecret123"}
+
 
 def tabLoader():
     """
@@ -30,7 +32,7 @@ def tabLoader():
     )
 
     # Fetch notes from the server
-    r = requests.get(f"http://{ip}:{port}/notes")  
+    r = requests.get(f"http://{ip}:{port}/notes", headers=headers)  
     rows = r.json()["data"]  # Extract note data from server response
 
     tab_data = {}  # Dictionary to map tab titles to their note ID and GUI key
@@ -75,7 +77,7 @@ while True:
     # Event triggered when user creates a new tab/note
     if event == "-Make_tab-":
         # Send the new note title to the server
-        r = requests.post(f"http://{ip}:{port}/make-note", json=values["-INPUT-"])
+        r = requests.post(f"http://{ip}:{port}/make-note", headers=headers, json=values["-INPUT-"])
         print(r.json())  # Print server response
 
         # Close current window to reload with new tab
@@ -110,14 +112,14 @@ while True:
             })
 
         # Send updated notes to server
-        r = requests.post(f"http://{ip}:{port}/update", json=notes_to_send)
+        r = requests.post(f"http://{ip}:{port}/update", headers=headers, json=notes_to_send)
         print(r.json())  # Print server response
     
     if event.startswith("-Delete-"):
 
         note_id = int(event.replace("-Delete-", "").replace("-", ""))
 
-        r = requests.post(f"http://{ip}:{port}/delete-tab", json=note_id)
+        r = requests.post(f"http://{ip}:{port}/delete-tab", headers=headers, json=note_id)
         print(r.json())  # Print server response
 
         # Close current window to reload with new tab

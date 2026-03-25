@@ -55,8 +55,16 @@ class Handler(BaseHTTPRequestHandler):
     """
     Handles HTTP GET and POST requests for the notes app.
     """
+    API_KEY = "mysecret123"
+
+    def is_authorized(self):
+        return self.headers.get("X-API-Key") == API_KEY
 
     def do_GET(self):
+        if not self.is_authorized():
+            self.send_response(403)
+            self.end_headers()
+            return
         """
         Handles GET requests.
         Currently supports:
@@ -88,6 +96,10 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(response).encode())
 
     def do_POST(self):
+        if not self.is_authorized():
+            self.send_response(403)
+            self.end_headers()
+            return
         """
         Handles POST requests.
         Currently supports:
