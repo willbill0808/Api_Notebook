@@ -38,7 +38,11 @@ CREATE TABLE IF NOT EXISTS notes (
 """)
 
 # Insert a default user for testing (only if this DB is new)
-cursor.execute("""INSERT INTO users (username, password) VALUES(?, ?)""", ("test", "pass"))
+try:
+    cursor.execute("""INSERT INTO users (username, password) VALUES(?, ?)""", ("test", "pass"))
+except Exception as e:
+    print(e)
+    
 
 # Commit database changes
 conn.commit()
