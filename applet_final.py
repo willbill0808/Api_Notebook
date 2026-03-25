@@ -44,7 +44,7 @@ def tabLoader():
 
         # Add the tab with a multiline box containing the note content
         tabs.append(
-            sg.Tab(title, [[sg.Multiline(key=key, default_text=content, size=(120,20))]])
+            sg.Tab(title, [[sg.Multiline(key=key, default_text=content, size=(120,20))], [sg.Button("Delete", key=f"-Delete-{note_id}-")]])
         )
 
         # Save mapping of title to note metadata for easy updates later
@@ -112,6 +112,16 @@ while True:
         # Send updated notes to server
         r = requests.post(f"http://{ip}:{port}/update", json=notes_to_send)
         print(r.json())  # Print server response
+    
+    if event.startswith("-Delete-"):
+
+        note_id = int(event.replace("-Delete-", "").replace("-", ""))
+
+        r = requests.post(f"http://{ip}:{port}/update", json=note_id)
+        print(r.json())  # Print server response
+
+
+
 
 # Close the window when exiting the loop
 window.close()

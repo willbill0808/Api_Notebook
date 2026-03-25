@@ -159,6 +159,30 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps(response).encode())
+        
+        # -------------------------------
+        # sletter tab
+        # -------------------------------
+        if parsed.path == "/update":
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length)
+
+            try:
+                note_id = json.loads(body)
+                print(note_id)
+                
+
+                conn.commit()  # Save all updates
+                response = {"status": "ok"}
+
+            except Exception as e:
+                response = {"status": "error", "message": str(e)}
+
+            # Send JSON response
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode())
 
 
 # -------------------------------
