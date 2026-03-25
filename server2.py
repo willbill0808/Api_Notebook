@@ -6,6 +6,30 @@ from urllib.parse import urlparse, parse_qs
 conn = sqlite3.connect("server.db", check_same_thread=False)
 cursor = conn.cursor()
 
+cursor.execute("PRAGMA foreign_keys = ON")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username VARCHAR(25) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL
+);
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    notename VARCHAR(25) NOT NULL,
+    contents TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+""")
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
@@ -32,6 +56,31 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urlparse(self.path)
+
+        if parsed.path == "/make-note":
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length)
+
+            try:
+                title = json.loads(body)
+                print("New tab name received:", title)
+                
+                cursor.execute(
+                    """INSERT INTO notes (user_id, notename, contents) VALUES(?, ?, ?)""",
+                    (1, title, "")  # user_id=1, contents empty string
+                )
+
+                conn.commit()
+                response = {"status": "ok"}
+
+            except Exception as e:
+                response = {"status": "error", "message": str(e)}
+
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode())
+
 
         if parsed.path == "/update":
             content_length = int(self.headers.get('Content-Length', 0))

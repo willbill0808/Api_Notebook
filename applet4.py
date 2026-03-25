@@ -22,7 +22,6 @@ def tabLoader():
     r = requests.get(f"http://{ip}:{port}/notes")  
     rows = r.json()["data"]
 
-    # Map title -> {"id":..., "key":...}
     tab_data = {}
 
     for row in rows:
@@ -41,9 +40,6 @@ def tabLoader():
 
     return tabs, tab_data, rows
 
-def makeTab(Tittle):
-    print(Tittle)
-
 tabs, tab_data, original_content = tabLoader()
 
 layout = [
@@ -57,6 +53,22 @@ while True:
     event, values = window.read()
     if event in (sg.WIN_CLOSED, "-Exit-"):
         break
+    
+    if event == "-Make_tab-":
+        r = requests.post(f"http://{ip}:{port}/make-note", json=values["-INPUT-"])
+        print(r.json())
+
+        window.close()
+
+        tabs, tab_data, original_content = tabLoader()
+
+        layout = [
+            [sg.TabGroup([tabs])],
+            [sg.Button("Update", key="-Update-"), sg.Button("Quit", key="-Exit-")]
+        ]
+
+        window = sg.Window('Notes App', layout, size=(900,500), resizable=True, finalize=True)
+
 
     if event == "-Update-":
         notes_to_send = []
@@ -72,8 +84,8 @@ while True:
                 "content": content
             })
 
-    r = requests.post(f"http://{ip}:{port}/update", json=notes_to_send)
-    print(r.json())
+        r = requests.post(f"http://{ip}:{port}/update", json=notes_to_send)
+        print(r.json())
 
 window.close()
 
