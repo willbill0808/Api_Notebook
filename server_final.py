@@ -184,8 +184,17 @@ class Handler(BaseHTTPRequestHandler):
 
             try:
                 # Expect a JSON string with the note title
-                title = json.loads(body)
-                print("New checkbox name received:", title)
+                info_checkbox = json.loads(body)
+                print("New checkbox name received:", info_checkbox)
+
+                info_checkbox[0] = list_name
+                info_checkbox[1] = title
+                info_checkbox[2] = complete
+
+                cursor.execute("SELECT contens FROM notes WHERE notename IS LIKE ?", (title))
+                rows = c.fetchall() 
+                if rows:
+                    print(rows)
 
                 # Insert new note for user_id=1 with empty content
                 #cursor.execute(

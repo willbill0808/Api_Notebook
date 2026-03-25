@@ -135,7 +135,7 @@ while True:
         print(f"{todo_name=}")
         print(f"{values[f"-INPUT-checkbox-{todo_name}-"]=}")
 
-        todo_box [todo_name, values[f"-INPUT-checkbox-{todo_name}-"], false]
+        todo_box = [todo_name, values[f"-INPUT-checkbox-{todo_name}-"], False]
         r = requests.post(f"http://{ip}:{port}/add-todo", headers=headers, json=todo_box)
         print(r.json())  # Print server response
 
