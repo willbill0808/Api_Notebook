@@ -3,7 +3,7 @@ import requests, json
 user = "test"
 user_id = 1
 
-ip = "10.0.0.88"
+ip = "193.69.217.172"
 port = 8000
 
 def tabLoader():
