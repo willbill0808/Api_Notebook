@@ -6,7 +6,7 @@ from urllib.parse import urlparse, parse_qs
 conn = sqlite3.connect("server.db", check_same_thread=False)
 cursor = conn.cursor()
 
-cursor.execute("PRAGMA foreign_keys = ON")
+conn.execute("PRAGMA foreign_keys = ON")
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS notes (
 );
 """)
 
+conn.commit()
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
