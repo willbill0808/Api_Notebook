@@ -175,7 +175,7 @@ class Handler(BaseHTTPRequestHandler):
                 note_id = json.loads(body)
                 print(note_id)
                 
-                 if note_id is not None:
+                if note_id is not None:
                     cursor.execute("DELETE FROM notes WHERE id = ?", (note_id,))
                     conn.commit()
                     response = {"status": "ok"}
