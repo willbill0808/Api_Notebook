@@ -117,7 +117,7 @@ while True:
 
         note_id = int(event.replace("-Delete-", "").replace("-", ""))
 
-        r = requests.post(f"http://{ip}:{port}/update", json=note_id)
+        r = requests.post(f"http://{ip}:{port}/delete-tab", json=note_id)
         print(r.json())  # Print server response
 
 

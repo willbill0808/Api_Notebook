@@ -163,7 +163,7 @@ class Handler(BaseHTTPRequestHandler):
         # -------------------------------
         # sletter tab
         # -------------------------------
-        if parsed.path == "/update":
+        if parsed.path == "/delete-tab":
             content_length = int(self.headers.get('Content-Length', 0))
             body = self.rfile.read(content_length)
 
