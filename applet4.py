@@ -9,7 +9,7 @@ def tabLoader():
 
     print("hi")
 
-    r = requests.get("http://localhost:8000/notes")  
+    r = requests.get("http://10.0.0.143:8000/notes")  
     print(r.json())
 
     rows = r.json()["data"]

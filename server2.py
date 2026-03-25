@@ -34,6 +34,6 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(response).encode())
 
 
-server = HTTPServer(("localhost", 8000), Handler)
+server = HTTPServer(("0.0.0.0", 8000), Handler)
 print("Server running at http://localhost:8000")
 server.serve_forever()
