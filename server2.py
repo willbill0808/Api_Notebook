@@ -3,11 +3,8 @@ import sqlite3
 import json
 from urllib.parse import urlparse, parse_qs
 
-# Connect to SQLite database (or creates one)
 conn = sqlite3.connect("server.db", check_same_thread=False)
 cursor = conn.cursor()
-
-# Create a sample table
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
