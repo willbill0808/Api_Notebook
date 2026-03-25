@@ -46,13 +46,25 @@ def tabLoader():
         key = f"-ML-{note_id}"  # Unique key for the Multiline input field
         note_type = row[4]
 
-        # Add the tab with a multiline box containing the note content
-        tabs.append(
-            sg.Tab(title, [[sg.Multiline(key=key, default_text=content, size=(120,20))], [sg.Button("Delete", key=f"-Delete-{note_id}-"), sg.Text(f"type: {note_type}")]])
-        )
+        if note_type == "note":
+            # Add the tab with a multiline box containing the note content
+            tabs.append(
+                sg.Tab(title, [
+                    [sg.Multiline(key=key, default_text=content, size=(120,20))], 
+                    [sg.Button("Delete", key=f"-Delete-{note_id}-"), sg.Text(f"type: {note_type}")]
+                    ])
+            )
 
-        # Save mapping of title to note metadata for easy updates later
-        tab_data[title] = {"id": note_id, "key": key}
+            # Save mapping of title to note metadata for easy updates later
+            tab_data[title] = {"id": note_id, "key": key}
+        
+        if note_type == "todo":
+            tabs.append(
+                sg.Tab(title,[
+                    [sg.Input(key='-INPUT-checkbox-'), sg.Button("Make a new checkbox", key="-Make_checkbox-")],
+                    [sg.Button("Delete", key=f"-Delete-{note_id}-"), sg.Text(f"type: {note_type}")]
+                ])
+            )
 
     return tabs, tab_data, rows
 
@@ -78,7 +90,7 @@ while True:
     
     # Event triggered when user creates a new tab/note
     if event == "-Make_note-":
-        
+
         # Send the new note title to the server
         r = requests.post(f"http://{ip}:{port}/make-note", headers=headers, json=values["-INPUT-note-"])
         print(r.json())  # Print server response
@@ -100,10 +112,23 @@ while True:
 
 
     if event == "-Make_todo-":
-        print(f"{values=}")
 
         r = requests.post(f"http://{ip}:{port}/make-todo", headers=headers, json=values["-INPUT-todo-"])
         print(r.json())  # Print server response
+
+        # Close current window to reload with new tab
+        window.close()
+
+        # Reload all tabs from the server including the new note
+        tabs, tab_data, original_content = tabLoader()
+
+        # Rebuild the layout with the updated tabs
+        layout = [
+            [sg.TabGroup([tabs])],
+            [sg.Button("Update", key="-Update-"), sg.Button("Quit", key="-Exit-")]
+        ]
+
+        window = sg.Window('Notes App', layout, size=(900,500), resizable=True, finalize=True)
 
     # Event triggered when user wants to update existing notes
     if event == "-Update-":
