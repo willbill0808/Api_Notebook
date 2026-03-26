@@ -6,7 +6,7 @@ user = "test"
 user_id = 1
 
 # Server connection details
-ip = "193.69.217.172"
+ip = "192.168.20.169"
 port = 8000
 headers = {"X-API-Key": "mysecret123"}
 
@@ -56,7 +56,7 @@ def tabLoader():
             )
 
             # Save mapping of title to note metadata for easy updates later
-            
+            tab_data[title] = {"id": note_id, "key": key}
         
         if note_type == "todo":
             checkbox_tabs = [
@@ -147,7 +147,10 @@ while True:
         window = sg.Window('Notes App', layout, size=(900,500), resizable=True, finalize=True)
     
     if event.startswith("-Make_checkbox-"):
-        todo_name = str(event.replace("-Make_checkbox-", "").replace("-", ""))
+        todo_name = str(event.replace("-Make_checkbox-", ""))
+
+        todo_name = todo_name[:-1]
+        print(f"{todo_name}")
 
         todo_box = [todo_name, values[f"-INPUT-checkbox-{todo_name}-"], False]
         r = requests.post(f"http://{ip}:{port}/add-todo", headers=headers, json=todo_box)
@@ -186,6 +189,9 @@ while True:
         notes_to_send = []
 
         # Prepare note data to send to server
+        print(f"{tab_data=}")
+        print(f"{tab_data.items()=}")
+
         for title, info in tab_data.items():
             note_id = info['id']
             key = info['key']
@@ -198,6 +204,7 @@ while True:
             })
 
         # Send updated notes to server
+        print(f"{notes_to_send=}")
         r = requests.post(f"http://{ip}:{port}/update", headers=headers, json=notes_to_send)
         print(r.json())  # Print server response
     
