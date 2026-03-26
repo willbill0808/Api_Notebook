@@ -50,8 +50,11 @@ Også kjør server koden
 python3 server_final.py
 ```
 
-----
-
+---
+---
+---
+---
+---
 På klienmaskinen må du ha applet_final.py
 Pass på at du har lastet ned alle Dependensies
 
