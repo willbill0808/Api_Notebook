@@ -192,7 +192,7 @@ class Handler(BaseHTTPRequestHandler):
                 complete = info_checkbox[2]
 
                 cursor.execute("SELECT contents FROM notes WHERE notename LIKE ?", (title,))
-                rows = c.fetchall() 
+                rows = cursor.fetchall() 
                 if rows:
                     print(rows)
                 else:
