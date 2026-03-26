@@ -194,6 +194,7 @@ class Handler(BaseHTTPRequestHandler):
                 # Read current contents from DB
                 cursor.execute("SELECT contents FROM notes WHERE notename = ?", (list_name,))
                 rows = cursor.fetchall()
+                print(rows)
 
                 # Build the new item
                 new_item = {"title": title, "complete": complete}
