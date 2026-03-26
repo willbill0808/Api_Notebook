@@ -171,7 +171,13 @@ class Handler(BaseHTTPRequestHandler):
 
                 new_item = {"title": title, "complete": complete}
 
-                if row and row[0]:
+                if row and row[ursor.execute("SELECT * FROM notes")
+                rows = cursor.fetchall()
+
+                response = {
+                    "status": "ok",
+                    "data": rows
+                }0]:
                     try:
                         items = json.loads(row[0])
                     except:
