@@ -153,6 +153,21 @@ while True:
         r = requests.post(f"http://{ip}:{port}/add-todo", headers=headers, json=todo_box)
         print(r.json())  # Print server response
 
+        # Close current window to reload with new tab
+        window.close()
+
+        # Reload all tabs from the server including the new note
+        tabs, tab_data, original_content = tabLoader()
+
+        # Rebuild the layout with the updated tabs
+        layout = [
+            [sg.TabGroup([tabs])],
+            [sg.Button("Update", key="-Update-"), sg.Button("Quit", key="-Exit-")]
+        ]
+
+        # Recreate the window with updated tabs
+        window = sg.Window('Notes App', layout, size=(900,500), resizable=True, finalize=True)
+
     if event.startswith("-CB-"):
         parts = event.split('-')
         note_id = int(parts[2])
