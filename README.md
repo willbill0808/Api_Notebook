@@ -51,10 +51,7 @@ python3 server_final.py
 ```
 
 ---
----
----
----
----
+
 På klienmaskinen må du ha applet_final.py
 Pass på at du har lastet ned alle Dependensies
 
@@ -68,12 +65,15 @@ python3 applet_final.py
 ```
 **Merk at appen krasjer om serveren ikke kjører**
 
+---
 
 Bruk av Guien fungerer som følgende:
 * **Legg til notater**: Klikk på "Make a new tab" for å lage et nytt notat. Skriv inn en tittel for notatet og det vil bli lagret på serveren.
 * **Lag todo-lister**: Klikk på "Make a new to-do tab" for å lage en todo-liste. Du kan legge til oppgaver og markere dem som fullførte.
 * **Oppdater notater**: Etter å ha gjort endringer, trykk på "Update" for å lagre endringene tilbake til serveren.
 * **Slett notater**: Klikk på "Delete" for å fjerne et notat eller todo-liste fra serveren.
+
+---
 
 ### Konfigurasjon av server IP og port
 
