@@ -191,17 +191,32 @@ class Handler(BaseHTTPRequestHandler):
                 title = info_checkbox[1]
                 complete = info_checkbox[2]
 
-                cursor.execute("SELECT contents FROM notes WHERE notename LIKE ?", (title,))
-                rows = cursor.fetchall() 
+                # Read current contents from DB
+                cursor.execute("SELECT contents FROM notes WHERE notename = ?", (list_name,))
+                rows = cursor.fetchall()
+
+                # Build the new item
+                new_item = {"title": title, "complete": complete}
+
                 if rows:
-                    print(rows)
+                    # If there is existing content, parse it
+                    try:
+                        current_items = json.loads(rows[0][0])
+                    except:
+                        current_items = []
+                    # Append new item
+                    current_items.append(new_item)
                 else:
-                    if title is not None:
-                        cursor.execute("""
-                            UPDATE notes
-                            SET contents = ?, updated_at = CURRENT_TIMESTAMP
-                            WHERE notename = ?
-                        """, ([[title, complete]], list_name))
+                    current_items = [new_item]
+
+                # Save back to DB as JSON string
+                cursor.execute("""
+                    UPDATE notes
+                    SET contents = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE notename = ?
+                """, (json.dumps(current_items), list_name))
+
+                conn.commit()
 
 
                 # Insert new note for user_id=1 with empty content
