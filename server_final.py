@@ -196,7 +196,13 @@ class Handler(BaseHTTPRequestHandler):
                 if rows:
                     print(rows)
                 else:
-                    print(f"{title} is empty")
+                    if title is not None:
+                        cursor.execute("""
+                            UPDATE notes
+                            SET contents = ?, updated_at = CURRENT_TIMESTAMP
+                            WHERE notename = ?
+                        """, ([[title, complete]], list_name))
+
 
                 # Insert new note for user_id=1 with empty content
                 #cursor.execute(
