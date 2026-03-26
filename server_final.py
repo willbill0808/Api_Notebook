@@ -187,9 +187,9 @@ class Handler(BaseHTTPRequestHandler):
                 info_checkbox = json.loads(body)
                 print("New checkbox name received:", info_checkbox)
 
-                info_checkbox[0] = list_name
-                info_checkbox[1] = title
-                info_checkbox[2] = complete
+                list_name = info_checkbox[0]
+                title = info_checkbox[1]
+                complete = info_checkbox[2]
 
                 cursor.execute("SELECT contens FROM notes WHERE notename IS LIKE ?", (title))
                 rows = c.fetchall() 
