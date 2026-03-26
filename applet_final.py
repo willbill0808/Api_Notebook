@@ -155,10 +155,13 @@ while True:
 
     if event.startswith("-CB-"):
         parts = event.split('-')
-        numbers = [int(p) for p in parts if p.isdigit()]
-        
-        r = requests.post(f"http://{ip}:{port}/update-CB", headers=headers, json=numbers)
-        print(r.json())  # Print server response
+        note_id = int(parts[2])
+        cb_index = int(parts[3])
+        new_state = values[event]  # True/False from checkbox
+
+        payload = [note_id, cb_index, new_state]
+        r = requests.post(f"http://{ip}:{port}/update-CB", headers=headers, json=payload)
+        print(r.json())
 
 
 

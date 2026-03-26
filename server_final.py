@@ -282,17 +282,39 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/update-CB":
             content_length = int(self.headers.get('Content-Length', 0))
             body = self.rfile.read(content_length)
+            response = {"status": "error", "message": "Unknown error"}  # default
 
             try:
-                # Expect a JSON list of notes with id, title, and content
-                notes = json.loads(body)
-                print("Notes received:", notes)
+                # Expect JSON: [note_id, checkbox_index, new_state]
+                data = json.loads(body)
+                note_id = data[0]
+                cb_index = data[1]
+                new_state = data[2]
 
-                cursor.execute("SELECT contents FROM notes WHERE id = ?", (notes[0],))
-                rows = cursor.fetchall()
-                print(rows)
-                for row in rows:
-                    print(rows)
+                # Fetch current contents
+                cursor.execute("SELECT contents FROM notes WHERE id = ?", (note_id,))
+                row = cursor.fetchone()
+                if row:
+                    try:
+                        items = json.loads(row[0])
+                    except:
+                        items = []
+
+                    if 0 <= cb_index < len(items):
+                        items[cb_index]["complete"] = new_state  # update state
+
+                        # Save back to DB
+                        cursor.execute("""
+                            UPDATE notes
+                            SET contents = ?, updated_at = CURRENT_TIMESTAMP
+                            WHERE id = ?
+                        """, (json.dumps(items), note_id))
+                        conn.commit()
+                        response = {"status": "ok"}
+                    else:
+                        response = {"status": "error", "message": "Checkbox index out of range"}
+                else:
+                    response = {"status": "error", "message": "Note not found"}
 
             except Exception as e:
                 response = {"status": "error", "message": str(e)}
