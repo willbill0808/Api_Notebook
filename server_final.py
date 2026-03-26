@@ -279,7 +279,7 @@ class Handler(BaseHTTPRequestHandler):
         # -------------------------------
         # Update Checkbox
         # -------------------------------
-        if parsed.path == "/update":
+        if parsed.path == "/update-CB":
             content_length = int(self.headers.get('Content-Length', 0))
             body = self.rfile.read(content_length)
 
