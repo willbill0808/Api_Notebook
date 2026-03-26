@@ -288,7 +288,7 @@ class Handler(BaseHTTPRequestHandler):
                 notes = json.loads(body)
                 print("Notes received:", notes)
 
-                cursor.execute("SELECT contents FROM notes WHERE note_id = ?", (notes[0],))
+                cursor.execute("SELECT contents FROM notes WHERE id = ?", (notes[0],))
                 rows = cursor.fetchall()
                 print(rows)
 
