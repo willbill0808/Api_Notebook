@@ -4,82 +4,84 @@ import json
 from urllib.parse import urlparse, parse_qs
 
 
-API_KEY = "mysecret123"
+API_KEY = "mysecret123"  # Enkel API-nøkkel for autentisering (ikke sikker i produksjon)
 
 
 # -------------------------------
-# Database setup
+# Database-oppsett
 # -------------------------------
 
-# Connect to SQLite database (thread-safe access)
+# Koble til SQLite database
+# check_same_thread=False gjør at vi kan bruke samme connection i flere requests
 conn = sqlite3.connect("server.db", check_same_thread=False)
 cursor = conn.cursor()
 
-# Enable foreign key constraints
+# Aktiver foreign key constraints (viktig!)
 conn.execute("PRAGMA foreign_keys = ON")
 
-# Create "users" table if it doesn't exist
+# Opprett brukertabell
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,   -- Unique user ID
-    username VARCHAR(25) UNIQUE NOT NULL,   -- Username must be unique
-    password VARCHAR(255) NOT NULL          -- Password storage (plain text here; consider hashing in production)
+    id INTEGER PRIMARY KEY AUTOINCREMENT,   -- Unik bruker-ID
+    username VARCHAR(25) UNIQUE NOT NULL,   -- Brukernavn (må være unikt)
+    password VARCHAR(255) NOT NULL          -- Passord (lagres i klartekst her - IKKE trygt)
 );
 """)
 
-# Create "notes" table if it doesn't exist
+# Opprett notat-tabell
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS notes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,                         -- Unique note ID
-    user_id INTEGER NOT NULL,                                     -- Foreign key to users table
-    notename VARCHAR(25) NOT NULL,                                -- Note title
-    contents TEXT,                                                -- Note contents,
-    type TEXT CHECK(type IN ('note', 'todo')) not null,           -- Either note or todo
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,               -- Creation timestamp
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,               -- Last updated timestamp
+    id INTEGER PRIMARY KEY AUTOINCREMENT,                         -- Unik note-ID
+    user_id INTEGER NOT NULL,                                     -- Kobling til bruker
+    notename VARCHAR(25) NOT NULL,                                -- Tittel på notat
+    contents TEXT,                                                -- Innhold (tekst eller JSON)
+    type TEXT CHECK(type IN ('note', 'todo')) not null,           -- Type: vanlig notat eller todo
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,               -- Når opprettet
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,               -- Sist oppdatert
 
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE  -- Ensure notes are deleted if user is deleted
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE  -- Slett noter hvis bruker slettes
 );
 """)
 
-# Insert a default user for testing (only if this DB is new)
+# Legg inn testbruker hvis den ikke finnes
 try:
     cursor.execute("""INSERT INTO users (username, password) VALUES(?, ?)""", ("test", "pass"))
 except Exception as e:
-    print(e)
-    
+    print(e)  # feiler hvis brukeren allerede finnes
 
-# Commit database changes
 conn.commit()
 
 
 # -------------------------------
-# HTTP Server Handler
+# HTTP Handler
 # -------------------------------
 class Handler(BaseHTTPRequestHandler):
     """
-    Handles HTTP GET and POST requests for the notes app.
+    Denne klassen håndterer alle HTTP-requests (GET og POST).
     """
-    
 
     def is_authorized(self):
+        """
+        Enkel sjekk av API-nøkkel i header.
+        """
         return self.headers.get("X-API-Key") == API_KEY
 
     def do_GET(self):
+        """
+        Håndterer GET requests.
+        """
         if not self.is_authorized():
             self.send_response(403)
             self.end_headers()
             return
-        """
-        Handles GET requests.
-        Currently supports:
-        - /notes : Returns a list of all notes.
-        """
+
         parsed = urlparse(self.path)
 
-        if parsed.path == "/notes" and self.command == "GET":
+        # -------------------------------
+        # Hent alle notater
+        # -------------------------------
+        if parsed.path == "/notes":
             try:
-                # Fetch all notes from the database
                 cursor.execute("SELECT * FROM notes")
                 rows = cursor.fetchall()
 
@@ -88,44 +90,40 @@ class Handler(BaseHTTPRequestHandler):
                     "data": rows
                 }
             except Exception as e:
-                # Handle database errors
                 response = {
                     "status": "error",
                     "message": str(e)
                 }
 
-            # Send JSON response
+            # Send JSON tilbake til klient
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps(response).encode())
 
     def do_POST(self):
+        """
+        Håndterer POST requests (oppretting, oppdatering, sletting).
+        """
         if not self.is_authorized():
             self.send_response(403)
             self.end_headers()
             return
-        """
-        Handles POST requests.
-        Currently supports:
-        - /make-note : Create a new note
-        - /update    : Update existing notes
-        """
+
         parsed = urlparse(self.path)
 
+        # Les body (gjelder nesten alle POST requests)
+        content_length = int(self.headers.get('Content-Length', 0))
+        body = self.rfile.read(content_length)
+
         # -------------------------------
-        # Create a new note
+        # Lag nytt notat
         # -------------------------------
         if parsed.path == "/make-note":
-            content_length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(content_length)
-
             try:
-                # Expect a JSON string with the note title
                 title = json.loads(body)
-                print("New tab name received:", title)
+                print("Ny note:", title)
 
-                # Insert new note for user_id=1 with empty content
                 cursor.execute(
                     """INSERT INTO notes (user_id, notename, contents, type) VALUES(?, ?, ?, ?)""",
                     (1, title, "", "note")
@@ -135,28 +133,16 @@ class Handler(BaseHTTPRequestHandler):
                 response = {"status": "ok"}
 
             except Exception as e:
-                # Handle insertion errors (e.g., foreign key issues)
                 response = {"status": "error", "message": str(e)}
 
-            # Send JSON response
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(response).encode())
-
         # -------------------------------
-        # Create a new To-do list
+        # Lag ny todo-liste
         # -------------------------------
-        if parsed.path == "/make-todo":
-            content_length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(content_length)
-
+        elif parsed.path == "/make-todo":
             try:
-                # Expect a JSON string with the note title
                 title = json.loads(body)
-                print("New tab name received:", title)
+                print("Ny todo:", title)
 
-                # Insert new note for user_id=1 with empty content
                 cursor.execute(
                     """INSERT INTO notes (user_id, notename, contents, type) VALUES(?, ?, ?, ?)""",
                     (1, title, "", "todo")
@@ -166,196 +152,131 @@ class Handler(BaseHTTPRequestHandler):
                 response = {"status": "ok"}
 
             except Exception as e:
-                # Handle insertion errors (e.g., foreign key issues)
                 response = {"status": "error", "message": str(e)}
 
-            # Send JSON response
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(response).encode())
-        
         # -------------------------------
-        # Create a new To-do element
+        # Legg til todo-element
         # -------------------------------
-        if parsed.path == "/add-todo":
-            content_length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(content_length)
-
+        elif parsed.path == "/add-todo":
             try:
-                # Expect a JSON string with the note info
-                info_checkbox = json.loads(body)
-                print("New checkbox info received:", info_checkbox)
+                info = json.loads(body)
 
-                list_name = info_checkbox[0]
-                title = info_checkbox[1]
-                complete = info_checkbox[2]
+                list_name = info[0]
+                title = info[1]
+                complete = info[2]
 
-                # Read current contents from DB
+                # Hent eksisterende liste
                 cursor.execute("SELECT contents FROM notes WHERE notename = ?", (list_name,))
-                rows = cursor.fetchall()
-                print(rows)
+                row = cursor.fetchone()
 
-                # Build the new item
                 new_item = {"title": title, "complete": complete}
 
-                if rows:
-                    # If there is existing content, parse it
-                    try:
-                        current_items = json.loads(rows[0][0])
-                    except:
-                        current_items = []
-                    # Append new item
-                    current_items.append(new_item)
-                else:
-                    current_items = [new_item]
-
-                # Save back to DB as JSON string
-                cursor.execute("""
-                    UPDATE notes
-                    SET contents = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE notename = ?
-                """, (json.dumps(current_items), list_name))
-
-                conn.commit()
-
-
-                # Insert new note for user_id=1 with empty content
-                #cursor.execute(
-                #    """INSERT INTO notes (user_id, notename, contents, type) VALUES(?, ?, ?, ?)""",
-                #    (1, title, "", "todo")
-                #)
-
-                #conn.commit()
-                response = {"status": "ok"}
-
-            except Exception as e:
-                # Handle insertion errors (e.g., foreign key issues)
-                response = {"status": "error", "message": str(e)}
-
-            # Send JSON response
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(response).encode())
-
-        # -------------------------------
-        # Update existing notes
-        # -------------------------------
-        if parsed.path == "/update":
-            content_length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(content_length)
-
-            try:
-                # Expect a JSON list of notes with id, title, and content
-                notes = json.loads(body)
-                print("Notes received:", notes)
-
-                # Update each note in the database
-                for note in notes:
-                    note_id = note.get("id")
-                    title = note.get("title")
-                    content = note.get("content")
-
-                    if note_id is not None:
-                        cursor.execute("""
-                            UPDATE notes
-                            SET notename = ?, contents = ?, updated_at = CURRENT_TIMESTAMP
-                            WHERE id = ?
-                        """, (title, content, note_id))
-
-                conn.commit()  # Save all updates
-                response = {"status": "ok"}
-
-            except Exception as e:
-                response = {"status": "error", "message": str(e)}
-
-            # Send JSON response
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(response).encode())
-
-        # -------------------------------
-        # Update Checkbox
-        # -------------------------------
-        if parsed.path == "/update-CB":
-            content_length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(content_length)
-            response = {"status": "error", "message": "Unknown error"}  # default
-
-            try:
-                # Expect JSON: [note_id, checkbox_index, new_state]
-                data = json.loads(body)
-                note_id = data[0]
-                cb_index = data[1]
-                new_state = data[2]
-
-                # Fetch current contents
-                cursor.execute("SELECT contents FROM notes WHERE id = ?", (note_id,))
-                row = cursor.fetchone()
-                if row:
+                if row and row[0]:
                     try:
                         items = json.loads(row[0])
                     except:
                         items = []
+                else:
+                    items = []
+
+                items.append(new_item)
+
+                # Lagre tilbake som JSON
+                cursor.execute("""
+                    UPDATE notes
+                    SET contents = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE notename = ?
+                """, (json.dumps(items), list_name))
+
+                conn.commit()
+                response = {"status": "ok"}
+
+            except Exception as e:
+                response = {"status": "error", "message": str(e)}
+
+        # -------------------------------
+        # Oppdater noter
+        # -------------------------------
+        elif parsed.path == "/update":
+            try:
+                notes = json.loads(body)
+
+                for note in notes:
+                    cursor.execute("""
+                        UPDATE notes
+                        SET notename = ?, contents = ?, updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (note["title"], note["content"], note["id"]))
+
+                conn.commit()
+                response = {"status": "ok"}
+
+            except Exception as e:
+                response = {"status": "error", "message": str(e)}
+
+        # -------------------------------
+        # Oppdater checkbox
+        # -------------------------------
+        elif parsed.path == "/update-CB":
+            try:
+                note_id, cb_index, new_state = json.loads(body)
+
+                cursor.execute("SELECT contents FROM notes WHERE id = ?", (note_id,))
+                row = cursor.fetchone()
+
+                if row:
+                    items = json.loads(row[0]) if row[0] else []
 
                     if 0 <= cb_index < len(items):
-                        items[cb_index]["complete"] = new_state  # update state
+                        items[cb_index]["complete"] = new_state
 
-                        # Save back to DB
                         cursor.execute("""
                             UPDATE notes
                             SET contents = ?, updated_at = CURRENT_TIMESTAMP
                             WHERE id = ?
                         """, (json.dumps(items), note_id))
+
                         conn.commit()
                         response = {"status": "ok"}
                     else:
-                        response = {"status": "error", "message": "Checkbox index out of range"}
+                        response = {"status": "error", "message": "Index feil"}
                 else:
-                    response = {"status": "error", "message": "Note not found"}
+                    response = {"status": "error", "message": "Fant ikke note"}
 
             except Exception as e:
                 response = {"status": "error", "message": str(e)}
 
-            # Send JSON response
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(response).encode())
-        
         # -------------------------------
-        # sletter tab
+        # Slett note
         # -------------------------------
-        if parsed.path == "/delete-tab":
-            content_length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(content_length)
-
+        elif parsed.path == "/delete-tab":
             try:
                 note_id = json.loads(body)
-                print(note_id)
-                
-                if note_id is not None:
-                    cursor.execute("DELETE FROM notes WHERE id = ?", (note_id,))
-                    conn.commit()
-                    response = {"status": "ok"}
-                else:
-                    response = {"status": "error", "message": "No note id provided"}
+
+                cursor.execute("DELETE FROM notes WHERE id = ?", (note_id,))
+                conn.commit()
+
+                response = {"status": "ok"}
 
             except Exception as e:
                 response = {"status": "error", "message": str(e)}
 
-            # Send JSON response
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(response).encode())
+        else:
+            response = {"status": "error", "message": "Ukjent endpoint"}
+
+        # Send svar tilbake
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(response).encode())
 
 
 # -------------------------------
-# Start the server
+# Start server
 # -------------------------------
 server = HTTPServer(("0.0.0.0", 8000), Handler)
-print("Server running at http://localhost:8000")
+
+print("Server kjører på http://localhost:8000")
+
+# Starter en blocking loop som håndterer requests én etter én
 server.serve_forever()
