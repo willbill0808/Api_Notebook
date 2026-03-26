@@ -185,13 +185,13 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 # Expect a JSON string with the note info
                 info_checkbox = json.loads(body)
-                print("New checkbox name received:", info_checkbox)
+                print("New checkbox info received:", info_checkbox)
 
                 list_name = info_checkbox[0]
                 title = info_checkbox[1]
                 complete = info_checkbox[2]
 
-                cursor.execute("SELECT contents FROM notes WHERE notename LIKE ?", (title))
+                cursor.execute("SELECT contents FROM notes WHERE notename LIKE ?", (title,))
                 rows = c.fetchall() 
                 if rows:
                     print(rows)
