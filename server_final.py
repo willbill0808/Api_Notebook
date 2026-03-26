@@ -275,6 +275,27 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps(response).encode())
+
+        # -------------------------------
+        # Update Checkbox
+        # -------------------------------
+        if parsed.path == "/update":
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length)
+
+            try:
+                # Expect a JSON list of notes with id, title, and content
+                notes = json.loads(body)
+                print("Notes received:", notes)
+
+            except Exception as e:
+                response = {"status": "error", "message": str(e)}
+
+            # Send JSON response
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode())
         
         # -------------------------------
         # sletter tab

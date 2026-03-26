@@ -71,7 +71,7 @@ def tabLoader():
             # Add checkboxes for each todo item
             for i, item in enumerate(todo_items):
                 checkbox_tabs.append([
-                    sg.Checkbox(item["title"], default=item.get("complete", False), key=f"-CB-{note_id}-{i}-")
+                    sg.Checkbox(item["title"], default=item.get("complete", False), key=f"-CB-{note_id}-{i}-", enable_events=True)
                 ])
 
             # Add Delete button and type label
@@ -97,6 +97,8 @@ window = sg.Window('Notes App', layout, size=(900,500), resizable=True, finalize
 # Event loop for GUI
 while True:
     event, values = window.read()  # Read user actions and input values
+
+    print(f"the lates event was {event}")
 
     # Exit the program if window is closed or "Quit" button is pressed
     if event in (sg.WIN_CLOSED, "-Exit-"):
@@ -146,12 +148,18 @@ while True:
     
     if event.startswith("-Make_checkbox-"):
         todo_name = str(event.replace("-Make_checkbox-", "").replace("-", ""))
-        print(f"{todo_name=}")
-        print(f"{values[f"-INPUT-checkbox-{todo_name}-"]=}")
 
         todo_box = [todo_name, values[f"-INPUT-checkbox-{todo_name}-"], False]
         r = requests.post(f"http://{ip}:{port}/add-todo", headers=headers, json=todo_box)
         print(r.json())  # Print server response
+
+    if event.startswith("-CB-"):
+        parts = event.split('-')
+        numbers = [int(p) for p in parts if p.isdigit()]
+        
+        r = requests.post(f"http://{ip}:{port}/update-CB", headers=headers, json=numbers)
+        print(r.json())  # Print server response
+
 
 
 
