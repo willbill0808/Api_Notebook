@@ -78,6 +78,5 @@ Endre port til hvilken port serveren er satt til å lete på, om disse ikke stem
 ## TODO / Videreutvikling
 
 * [ ] Legge til brukergodkjenning og passordhashing
-* [ ] Forbedre GUI med mulighet for å slette notater
 * [ ] Lagring av endringer automatisk uten å trykke "Update"
 * [ ] Bytte over til mariaDB for bedre skalering
