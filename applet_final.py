@@ -56,17 +56,31 @@ def tabLoader():
             )
 
             # Save mapping of title to note metadata for easy updates later
-            tab_data[title] = {"id": note_id, "key": key}
+            
         
         if note_type == "todo":
-            tabs.append(
-                sg.Tab(title,[
-                    [sg.Input(key=f'-INPUT-checkbox-{title}-'), sg.Button("Make a new checkbox", key=f"-Make_checkbox-{title}-")],
-                    [sg.Button("Delete", key=f"-Delete-{note_id}-"), sg.Text(f"type: {note_type}")]
+            checkbox_tabs = [
+                [sg.Input(key=f'-INPUT-checkbox-{title}-'), sg.Button("Make a new checkbox", key=f"-Make_checkbox-{title}-")]]
+            
+            # Convert JSON string to Python list
+            try:
+                todo_items = json.loads(content)
+            except Exception:
+                todo_items = []
+
+            # Add checkboxes for each todo item
+            for i, item in enumerate(todo_items):
+                checkbox_tabs.append([
+                    sg.Checkbox(item["title"], default=item.get("complete", False), key=f"-CB-{note_id}-{i}-")
                 ])
-            )
+
+            # Add Delete button and type label
+            checkbox_tabs.append([sg.Button("Delete", key=f"-Delete-{note_id}-"), sg.Text(f"type: {note_type}")])
+
+            tabs.append(sg.Tab(title, checkbox_tabs))
 
     return tabs, tab_data, rows
+
 
 # Load tabs and data from server at startup
 tabs, tab_data, original_content = tabLoader()
