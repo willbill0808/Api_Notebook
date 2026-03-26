@@ -291,7 +291,8 @@ class Handler(BaseHTTPRequestHandler):
                 cursor.execute("SELECT contents FROM notes WHERE id = ?", (notes[0],))
                 rows = cursor.fetchall()
                 print(rows)
-
+                for row in rows:
+                    print(rows)
 
             except Exception as e:
                 response = {"status": "error", "message": str(e)}
