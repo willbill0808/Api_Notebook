@@ -50,7 +50,7 @@ Også kjør server koden
 python3 server_final.py
 ```
 
-~~
+--
 
 På klienmaskinen må du ha applet_final.py
 Pass på at du har lastet ned alle Dependensies
@@ -126,15 +126,5 @@ Du kan endre hvor serveren lytter etter HTTP-forespørsler ved å justere server
 * **Bytte til MariaDB**: Bytte fra SQLite3 til mariaDB for bedre skalering.
 * **Responsiv design**: Forbedre GUI-en for å gjøre den mer responsiv og brukervennlig på forskjellige skjermstørrelser.
 * **Grafisk design**: Forbedre GUI-en sinn visuel stil.
-
----
-
-# Notes App
-
-
-
-## Funksjoner
-
-
 
 ---
