@@ -1,6 +1,6 @@
 import FreeSimpleGUI as sg  # GUI library for creating windows and controls
 import requests, json, os   # requests for HTTP calls, json for parsing data
-import bcrypt
+
 
 headers = {"X-API-Key": "mysecret123"}
 
