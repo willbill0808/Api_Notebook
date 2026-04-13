@@ -1,81 +1,92 @@
-import FreeSimpleGUI as sg  # GUI library for building windows and controls
-import requests, json       # requests for HTTP communication, json for parsing
+import FreeSimpleGUI as sg  # GUI-bibliotek for å lage vinduer og kontroller
+import requests, json       # requests for HTTP-kall, json for parsing av data
 
-# User information (currently hardcoded)
+# Brukerinformasjon (hardkodet foreløpig)
 user = "test"
 user_id = 1
 
-# Server connection details
-ip = "193.69.217.172"
+# Server-tilkobling
+ip = "192.168.20.169"
 port = 8000
 headers = {"X-API-Key": "mysecret123"}
 
 
 def tabLoader():
     """
-    Loads existing notes from the server and creates tabs for the GUI.
-    
-    Returns:
-        tabs (list): List of sg.Tab objects for the TabGroup
-        tab_data (dict): Mapping of tab titles to note metadata (id and key)
-        rows (list): Raw note rows returned from the server
+    Henter eksisterende notater fra serveren og lager faner (tabs) i GUI-et.
+
+    Returnerer:
+        tabs (list): Liste med sg.Tab-objekter
+        tab_data (dict): Kobler fanenavn til note-ID og GUI-key
+        rows (list): Rådata fra serveren
     """
     tabs = []
 
-    # Add the menu tab where the user can create a new note
+    # Meny-fane for å opprette nye notater eller todo-lister
     tabs.append(
         sg.Tab(
             "menu",
-            [[sg.Text('What do you want your new note space to be called:')],
-             [sg.Input(key='-INPUT-note-'), sg.Button("Make a new tab", key="-Make_note-")],
-             [sg.Input(key='-INPUT-todo-'), sg.Button("Make a new to-do tab", key="-Make_todo-")]]
+            [[sg.Text('Hva vil du kalle den nye notatfanen din?')],
+             [sg.Input(key='-INPUT-note-'), sg.Button("Lag ny notatfane", key="-Make_note-")],
+             [sg.Input(key='-INPUT-todo-'), sg.Button("Lag ny todo-fane", key="-Make_todo-")]]
         )
     )
 
-    # Fetch notes from the server
+    # Hent alle notater fra server
     r = requests.get(f"http://{ip}:{port}/notes", headers=headers)  
-    rows = r.json()["data"]  # Extract note data from server response
+    rows = r.json()["data"]
 
-    tab_data = {}  # Dictionary to map tab titles to their note ID and GUI key
+    tab_data = {}  # Holder oversikt over note-id og GUI-key
 
-    # Create a tab for each note returned from the server
+    # Lag en fane for hvert notat
     for row in rows:
-        note_id = row[0]        # ID of the note in the database
-        title = row[2]          # Note title
-        content = row[3]        # Note content
-        key = f"-ML-{note_id}"  # Unique key for the Multiline input field
-        note_type = row[4]
+        note_id = row[0]        # ID i databasen
+        title = row[2]          # Navn på notatet
+        content = row[3]        # Innhold
+        key = f"-ML-{note_id}"  # Unik key til Multiline-feltet
+        note_type = row[4]      # "note" eller "todo"
 
         if note_type == "note":
-            # Add the tab with a multiline box containing the note content
+            # Vanlig tekstnotat
             tabs.append(
                 sg.Tab(title, [
                     [sg.Multiline(key=key, default_text=content, size=(120,20))], 
-                    [sg.Button("Delete", key=f"-Delete-{note_id}-"), sg.Text(f"type: {note_type}")]
-                    ])
+                    [sg.Button("Slett", key=f"-Delete-{note_id}-"), sg.Text(f"type: {note_type}")]
+                ])
             )
 
-            # Save mapping of title to note metadata for easy updates later
-            
+            # Lagre kobling for senere oppdatering
+            tab_data[title] = {"id": note_id, "key": key}
         
         if note_type == "todo":
+            # Todo-liste med inputfelt for nye oppgaver
             checkbox_tabs = [
-                [sg.Input(key=f'-INPUT-checkbox-{title}-'), sg.Button("Make a new checkbox", key=f"-Make_checkbox-{title}-")]]
+                [sg.Input(key=f'-INPUT-checkbox-{title}-'), 
+                 sg.Button("Legg til checkbox", key=f"-Make_checkbox-{title}-")]
+            ]
             
-            # Convert JSON string to Python list
+            # Konverter JSON-string til liste
             try:
                 todo_items = json.loads(content)
             except Exception:
                 todo_items = []
 
-            # Add checkboxes for each todo item
+            # Lag checkboxes for hver oppgave
             for i, item in enumerate(todo_items):
                 checkbox_tabs.append([
-                    sg.Checkbox(item["title"], default=item.get("complete", False), key=f"-CB-{note_id}-{i}-", enable_events=True)
+                    sg.Checkbox(
+                        item["title"], 
+                        default=item.get("complete", False), 
+                        key=f"-CB-{note_id}-{i}-", 
+                        enable_events=True  # gjør at klikk trigger event
+                    )
                 ])
 
-            # Add Delete button and type label
-            checkbox_tabs.append([sg.Button("Delete", key=f"-Delete-{note_id}-"), sg.Text(f"type: {note_type}")])
+            # Slett-knapp nederst
+            checkbox_tabs.append([
+                sg.Button("Slett", key=f"-Delete-{note_id}-"), 
+                sg.Text(f"type: {note_type}")
+            ])
 
             tabs.append(sg.Tab(title, checkbox_tabs))
 
@@ -122,76 +133,112 @@ ip, port = settings()
 
 
 
-# Load tabs and data from server at startup
+# Last inn data ved oppstart
 tabs, tab_data, original_content = tabLoader()
 
-# Define the GUI layout with tabs and control buttons
+# GUI-layout
 layout = [
-    [sg.TabGroup([tabs])],  # TabGroup containing all tabs
-    [sg.Button("Update", key="-Update-"), sg.Button("Quit", key="-Exit-")]  # Control buttons
+    [sg.TabGroup([tabs])],
+    [sg.Button("Oppdater", key="-Update-"), sg.Button("Avslutt", key="-Exit-")]
 ]
 
-# Create the main window
-window = sg.Window('Notes App', layout, size=(900,500), resizable=True, finalize=True)
+# Opprett vindu
+window = sg.Window('Notat-app', layout, size=(900,500), resizable=True, finalize=True)
 
-# Event loop for GUI
+# Hoved-loop
 while True:
-    event, values = window.read()  # Read user actions and input values
+    event, values = window.read()
 
-    print(f"the lates event was {event}")
+    print(f"Siste event: {event}")
 
-    # Exit the program if window is closed or "Quit" button is pressed
+    # Avslutt programmet
     if event in (sg.WIN_CLOSED, "-Exit-"):
         break
     
-    # Event triggered when user creates a new tab/note
+    # Lag nytt notat
     if event == "-Make_note-":
-
-        # Send the new note title to the server
         r = requests.post(f"http://{ip}:{port}/make-note", headers=headers, json=values["-INPUT-note-"])
-        print(r.json())  # Print server response
+        print(r.json())
 
+<<<<<<< HEAD
         reload()
 
+=======
+        # Reload GUI (enkelt men ikke optimalt)
+        window.close()
+        tabs, tab_data, original_content = tabLoader()
 
+        layout = [
+            [sg.TabGroup([tabs])],
+            [sg.Button("Oppdater", key="-Update-"), sg.Button("Avslutt", key="-Exit-")]
+        ]
+
+        window = sg.Window('Notat-app', layout, size=(900,500), resizable=True, finalize=True)
+>>>>>>> 45bfb9374483cd0a7c80155c6338d8359239351d
+
+    # Lag ny todo-liste
     if event == "-Make_todo-":
-
         r = requests.post(f"http://{ip}:{port}/make-todo", headers=headers, json=values["-INPUT-todo-"])
-        print(r.json())  # Print server response
+        print(r.json())
 
+<<<<<<< HEAD
         reload()
+=======
+        # Reload GUI
+        window.close()
+        tabs, tab_data, original_content = tabLoader()
+
+        layout = [
+            [sg.TabGroup([tabs])],
+            [sg.Button("Oppdater", key="-Update-"), sg.Button("Avslutt", key="-Exit-")]
+        ]
+
+        window = sg.Window('Notat-app', layout, size=(900,500), resizable=True, finalize=True)
+>>>>>>> 45bfb9374483cd0a7c80155c6338d8359239351d
     
+    # Legg til checkbox i todo
     if event.startswith("-Make_checkbox-"):
-        todo_name = str(event.replace("-Make_checkbox-", "").replace("-", ""))
+        todo_name = event.replace("-Make_checkbox-", "")[:-1]
 
         todo_box = [todo_name, values[f"-INPUT-checkbox-{todo_name}-"], False]
+
         r = requests.post(f"http://{ip}:{port}/add-todo", headers=headers, json=todo_box)
-        print(r.json())  # Print server response
+        print(r.json())
 
+<<<<<<< HEAD
         reload()
+=======
+        # Reload GUI
+        window.close()
+        tabs, tab_data, original_content = tabLoader()
 
+        layout = [
+            [sg.TabGroup([tabs])],
+            [sg.Button("Oppdater", key="-Update-"), sg.Button("Avslutt", key="-Exit-")]
+        ]
+
+        window = sg.Window('Notat-app', layout, size=(900,500), resizable=True, finalize=True)
+>>>>>>> 45bfb9374483cd0a7c80155c6338d8359239351d
+
+    # Checkbox endret
     if event.startswith("-CB-"):
         parts = event.split('-')
         note_id = int(parts[2])
         cb_index = int(parts[3])
-        new_state = values[event]  # True/False from checkbox
+        new_state = values[event]
 
         payload = [note_id, cb_index, new_state]
         r = requests.post(f"http://{ip}:{port}/update-CB", headers=headers, json=payload)
         print(r.json())
 
-
-
-
-    # Event triggered when user wants to update existing notes
+    # Oppdater tekstnotater
     if event == "-Update-":
         notes_to_send = []
 
-        # Prepare note data to send to server
         for title, info in tab_data.items():
             note_id = info['id']
             key = info['key']
-            content = values.get(key, "")  # Get current content from the Multiline field
+            content = values.get(key, "")
 
             notes_to_send.append({
                 "id": note_id,
@@ -199,21 +246,30 @@ while True:
                 "content": content
             })
 
-        # Send updated notes to server
         r = requests.post(f"http://{ip}:{port}/update", headers=headers, json=notes_to_send)
-        print(r.json())  # Print server response
+        print(r.json())
     
+    # Slett notat
     if event.startswith("-Delete-"):
-
         note_id = int(event.replace("-Delete-", "").replace("-", ""))
 
         r = requests.post(f"http://{ip}:{port}/delete-tab", headers=headers, json=note_id)
-        print(r.json())  # Print server response
+        print(r.json())
 
+<<<<<<< HEAD
         reload()
+=======
+        # Reload GUI
+        window.close()
+        tabs, tab_data, original_content = tabLoader()
 
+        layout = [
+            [sg.TabGroup([tabs])],
+            [sg.Button("Oppdater", key="-Update-"), sg.Button("Avslutt", key="-Exit-")]
+        ]
 
+        window = sg.Window('Notat-app', layout, size=(900,500), resizable=True, finalize=True)
+>>>>>>> 45bfb9374483cd0a7c80155c6338d8359239351d
 
-
-# Close the window when exiting the loop
+# Lukk vindu
 window.close()
