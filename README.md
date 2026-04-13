@@ -77,37 +77,8 @@ Bruk av Guien fungerer som følgende:
 
 ### Konfigurasjon av server IP og port
 
-Du kan endre hvor serveren lytter etter HTTP-forespørsler ved å justere serverinnstillingene i `server2.py`.
-
-* **Endre IP-adresse**:
-  Hvis du ønsker at serveren bare skal lytte på lokale forespørsler fra samme maskin (localhost), kan du endre serverens IP til `localhost` i koden:
-
-  ```python
-  server = HTTPServer(("localhost", 8000), Handler)
-  ```
-
-  Hvis du vil at serveren skal kunne nås fra andre maskiner på nettverket ditt, kan du endre IP-en til `0.0.0.0`, som lytter på alle tilgjengelige nettverksgrensesnitt:
-
-  ```python
-  server = HTTPServer(("0.0.0.0", 8000), Handler)
-  ```
-
-* **Endre port**:
-  Hvis du ønsker å bruke en annen port, kan du endre portnummeret i samme linje:
-
-  ```python
-  server = HTTPServer(("0.0.0.0", 8000), Handler)  # Bytt ut 8000 med ønsket port
-  ```
-
-* **Endre IP/port i klienten**:
-  Pass på at klienten (`applet_final.py`) også er konfigurert til å kommunisere med riktig serveradresse. Juster `ip` og `port` i klientkoden:
-
-  ```python
-  ip = "193.69.217.172"  # Bytt til serverens IP
-  port = 8000             # Bytt til serverens portnummer
-  ```
-
-  Hvis du prøver å koble til serveren over WAN, må du sette opp port-forwarding på ruteren.
+Det er nå veldig lett å bytte ip addresse og port.
+I menu tabben har du to input felt som lagrer dataen på maskinen.
 
 
 ---
@@ -118,16 +89,17 @@ Du kan endre hvor serveren lytter etter HTTP-forespørsler ved å justere server
 * **Server-backend** som bruker SQLite for lagring av notater.
 * Mulighet for å lage både vanlige **notater** og **todo-lister**.
 * Mulighet for å oppdatere innhold, samt lagre todo-elementer med avkrysningsbokser.
+* Lagrer litt informasjon for fortere og enklere bruker opplevelse.
 
 ---
 
 ## To-do / Videreutvikling
 
-* **Brukergodkjenning**: Legg til mulighet for at brukere kan logge inn med et brukernavn og passord.
+* **Brukergodkjenning**: Legg til mulighet for at brukere kan logge inn med et brukernavn og passord. (ferdig)
 * **Passordhashing**: Implementer sikker passordlagring med hashing (f.eks. bcrypt).
 * **Automatisk lagring**: Lagre endringer automatisk uten å måtte trykke på "Update"-knappen for standar notatfelt.
 * **Bytte til MariaDB**: Bytte fra SQLite3 til mariaDB for bedre skalering.
-* **Responsiv design**: Forbedre GUI-en for å gjøre den mer responsiv og brukervennlig på forskjellige skjermstørrelser.
-* **Grafisk design**: Forbedre GUI-en sinn visuel stil.
+* **Responsiv design**: Forbedre GUI-en for å gjøre den mer responsiv og brukervennlig på forskjellige skjermstørrelser. 
+* **Grafisk design**: Forbedre GUI-en sinn visuel stil. 
 
 ---
