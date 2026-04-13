@@ -1,14 +1,15 @@
-import FreeSimpleGUI as sg  # GUI-bibliotek for å lage vinduer og kontroller
-import requests, json, os   # requests for HTTP-kall, json for parsing av data
+import FreeSimpleGUI as sg  # GUI library for creating windows and controls
+import requests, json, os   # requests for HTTP calls, json for parsing data
+import bcrypt
 
 headers = {"X-API-Key": "mysecret123"}
+
 
 CONFIG_FILE = "applet_config.txt"
 
 def save_config(ip=None, port=None, username=None, user_id=None):
     config = load_config() or {}
 
-    
     if ip is not None:
         config["ip"] = ip
     if port is not None:
@@ -40,16 +41,16 @@ def tabLoader():
     config = load_config()
 
     """
-    Henter eksisterende notater fra serveren og lager faner (tabs) i GUI-et.
+    Fetches existing notes from the server and creates tabs in the GUI.
 
-    Returnerer:
-        tabs (list): Liste med sg.Tab-objekter
-        tab_data (dict): Kobler fanenavn til note-ID og GUI-key
-        rows (list): Rådata fra serveren
+    Returns:
+        tabs (list): List of sg.Tab objects
+        tab_data (dict): Maps tab names to note ID and GUI key
+        rows (list): Raw data from the server
     """
     tabs = []
 
-    # Meny-fane for å opprette nye notater eller todo-lister
+    # Menu tab for creating new notes or todo lists
     tabs.append(
         sg.Tab(
             "Menu",
@@ -66,33 +67,33 @@ def tabLoader():
              [sg.Input(key='-INPUT-password-new_2-'), sg.Text("Confirm password")],
              [sg.Button("Create user", key="-create_user-")],
              [sg.Text("Server settings")],
-             [sg.Input(key='-INPUT-IP-', default_text=config["ip"]), sg.Text("What is the ip of your prefered server")],
-             [sg.Input(key='-INPUT-port-', default_text=config["port"]), sg.Text("What is the port of your prefered server")],
-             [sg.Button("Update prefrences", key="-change_server-")],
+             [sg.Input(key='-INPUT-IP-', default_text=config["ip"]), sg.Text("What is the ip of your preferred server")],
+             [sg.Input(key='-INPUT-port-', default_text=config["port"]), sg.Text("What is the port of your preferred server")],
+             [sg.Button("Update preferences", key="-change_server-")],
              ]
         )
     )
 
     if config["user_id"] == 0:
-
         return tabs, None, None
 
-    # Hent alle notater fra server
-    r = requests.get(f"http://{config["ip"]}:{config["port"]}/notes", headers=headers)  
+    # Fetch all notes from the server
+    r = requests.post(f"http://{config["ip"]}:{config["port"]}/notes", headers=headers, json=config["user_id"])  
+
     rows = r.json()["data"]
 
-    tab_data = {}  # Holder oversikt over note-id og GUI-key
+    tab_data = {}  # Keeps track of note id and GUI key
 
-    # Lag en fane for hvert notat
+    # Create a tab for each note
     for row in rows:
-        note_id = row[0]        # ID i databasen
-        title = row[2]          # Navn på notatet
-        content = row[3]        # Innhold
-        key = f"-ML-{note_id}"  # Unik key til Multiline-feltet
-        note_type = row[4]      # "note" eller "todo"
+        note_id = row[0]        # ID in the database
+        title = row[2]          # Note title
+        content = row[3]        # Content
+        key = f"-ML-{note_id}"  # Unique key for the Multiline field
+        note_type = row[4]      # "note" or "todo"
 
         if note_type == "note":
-            # Vanlig tekstnotat
+            # Regular text note
             tabs.append(
                 sg.Tab(title, [
                     [sg.Multiline(key=key, default_text=content, size=(120,20))], 
@@ -100,34 +101,34 @@ def tabLoader():
                 ])
             )
 
-            # Lagre kobling for senere oppdatering
+            # Store mapping for later updates
             tab_data[title] = {"id": note_id, "key": key}
         
         if note_type == "todo":
-            # Todo-liste med inputfelt for nye oppgaver
+            # Todo list with input field for new tasks
             checkbox_tabs = [
                 [sg.Input(key=f'-INPUT-checkbox-{title}-'), 
                  sg.Button("Add checkbox", key=f"-Make_checkbox-{title}-")]
             ]
             
-            # Konverter JSON-string til liste
+            # Convert JSON string to list
             try:
                 todo_items = json.loads(content)
             except Exception:
                 todo_items = []
 
-            # Lag checkboxes for hver oppgave
+            # Create checkboxes for each task
             for i, item in enumerate(todo_items):
                 checkbox_tabs.append([
                     sg.Checkbox(
                         item["title"], 
                         default=item.get("complete", False), 
                         key=f"-CB-{note_id}-{i}-", 
-                        enable_events=True  # gjør at klikk trigger event
+                        enable_events=True  # makes clicks trigger events
                     )
                 ])
 
-            # Slett-knapp nederst
+            # Delete button at the bottom
             checkbox_tabs.append([
                 sg.Button("Delete", key=f"-Delete-{note_id}-"), 
                 sg.Text(f"type: {note_type}")
@@ -158,7 +159,7 @@ def login(username, password):
     print(rows)
 
     if username == rows[0][1] and password == rows[0][2]:
-        save_config(username=rows[0][1], user_id=rows[0][2])
+        save_config(username=rows[0][1], user_id=rows[0][0])
         return
     else:
         return "wrong username or password"
@@ -168,47 +169,46 @@ def create_user(username, password, password2):
     print(password)
     print(password2)
 
+    if password != password2:
+        return "passwords don't match"
+
     r = requests.post(f"http://{config["ip"]}:{config["port"]}/create_user", headers=headers, json=[username, password, password2])
 
-# Last inn data ved oppstart
+# Load data on startup
 tabs, tab_data, original_content = tabLoader()
 
-# GUI-layout
+# GUI layout
 layout = [
     [sg.TabGroup([tabs])],
     [sg.Button("Update", key="-Update-"), sg.Button("Quit", key="-Exit-")]
 ]
 
-# Opprett vindu
+# Create window
 window = sg.Window('Notat-app', layout, size=(900,500), resizable=True, finalize=True)
 
-# Hoved-loop
+# Main loop
 while True:
     event, values = window.read()
 
     config = load_config()
 
-    print(f"Siste event: {event}")
+    print(f"Latest event: {event}")
 
-    # Avslutt programmet
+    # Exit the program
     if event in (sg.WIN_CLOSED, "-Exit-"):
         break
     
-    # Lag nytt notat
+    # Create new note
     if event == "-Make_note-":
-        r = requests.post(f"http://{config["ip"]}:{config["port"]}/make-note", headers=headers, json=values["-INPUT-note-"])
-        print(r.json())
-
+        r = requests.post(f"http://{config["ip"]}:{config["port"]}/make-note", headers=headers, json=[values["-INPUT-note-"], config["user_id"]])
         window = reload(window)
 
-    # Lag ny todo-liste
+    # Create new todo list
     if event == "-Make_todo-":
-        r = requests.post(f"http://{config["ip"]}:{config["port"]}/make-todo", headers=headers, json=values["-INPUT-todo-"])
-        print(r.json())
-
+        r = requests.post(f"http://{config["ip"]}:{config["port"]}/make-todo", headers=headers, json=[values["-INPUT-todo-"], config["user_id"]])
         window = reload(window)
     
-    # Legg til checkbox i todo
+    # Add checkbox to todo
     if event.startswith("-Make_checkbox-"):
         todo_name = event.replace("-Make_checkbox-", "")[:-1]
 
@@ -219,7 +219,7 @@ while True:
 
         window = reload(window)
 
-    # Checkbox endret
+    # Checkbox changed
     if event.startswith("-CB-"):
         parts = event.split('-')
         note_id = int(parts[2])
@@ -230,7 +230,7 @@ while True:
         r = requests.post(f"http://{config["ip"]}:{config["port"]}/update-CB", headers=headers, json=payload)
         print(r.json())
 
-    # Oppdater tekstnotater
+    # Update text notes
     if event == "-Update-":
         notes_to_send = []
 
@@ -249,7 +249,7 @@ while True:
             r = requests.post(f"http://{config["ip"]}:{config["port"]}/update", headers=headers, json=notes_to_send)
             print(r.json())
     
-    # Slett notat
+    # Delete note
     if event.startswith("-Delete-"):
         note_id = int(event.replace("-Delete-", "").replace("-", ""))
 
@@ -267,14 +267,11 @@ while True:
     if event == "-create_user-":
         auth = create_user(values["-INPUT-user-new-"], values["-INPUT-password-new-"], values["-INPUT-password-new_2-"])
         print(auth)
-
-        window = reload(window)
-    
     
     if event == "-change_server-":
         save_config(ip=values["-INPUT-IP-"], port=values["-INPUT-port-"])
         
         window = reload(window)
 
-# Lukk vindu
+# Close window
 window.close()
