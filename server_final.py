@@ -134,7 +134,60 @@ class Handler(BaseHTTPRequestHandler):
 
             except Exception as e:
                 response = {"status": "error", "message": str(e)}
+        
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode())
+        
+        # -------------------------------
+        # Henter ut user data
+        # -------------------------------
+        elif parsed.path == "/login":
+            try:
+                username = json.loads(body)
+                print("username:", username)
 
+                cursor.execute(
+                    """SELECT * FROM users WHERE username LIKE ?""",
+                    (username,)
+                )
+
+                rows = cursor.fetchall()
+                print(rows)
+
+                response = {
+                    "status": "ok",
+                    "data": rows
+                }
+
+            except Exception as e:
+                response = {"status": "error", "message": str(e)}
+
+        # -------------------------------
+        # Lager en ny bruker
+        # -------------------------------
+        elif parsed.path == "/create_user":
+            try:
+                username = json.loads(body)
+                print("username:", username)
+
+                cursor.execute(
+                    """SELECT * FROM users WHERE username LIKE ?""",
+                    (username,)
+                )
+
+                rows = cursor.fetchall()
+                print(rows)
+
+                response = {
+                    "status": "ok",
+                    "data": rows
+                }
+
+            except Exception as e:
+                response = {"status": "error", "message": str(e)}
+        
         # -------------------------------
         # Lag ny todo-liste
         # -------------------------------
