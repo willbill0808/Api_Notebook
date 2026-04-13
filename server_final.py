@@ -155,8 +155,7 @@ class Handler(BaseHTTPRequestHandler):
                 response = {"status": "error", "message": str(e)}
 
         # -------------------------------
-        # Legg til todo-element
-        # -------------------------------
+        # Legg til todo-element -------------------------------
         elif parsed.path == "/add-todo":
             try:
                 info = json.loads(body)
@@ -171,13 +170,13 @@ class Handler(BaseHTTPRequestHandler):
 
                 new_item = {"title": title, "complete": complete}
 
-                if row and row[ursor.execute("SELECT * FROM notes")
+                if row and row cursor.execute("SELECT * FROM notes")
                 rows = cursor.fetchall()
 
                 response = {
                     "status": "ok",
                     "data": rows
-                }0]:
+                }:
                     try:
                         items = json.loads(row[0])
                     except:
